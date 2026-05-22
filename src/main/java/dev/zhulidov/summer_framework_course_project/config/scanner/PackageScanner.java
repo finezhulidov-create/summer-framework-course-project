@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,7 +19,7 @@ public class PackageScanner {
         this.packageToScan = packageToScan;
         this.classLoader = Thread.currentThread().getContextClassLoader();
     }
-
+@SuppressWarnings("unchecked")
     public <T> Set<Class<? extends T>> getSubTypesOf(Class<T> ifc) throws IOException, ClassNotFoundException {
         Set<Class<?>> allClasses = scan();
         Set<Class<? extends T>> result = new HashSet<>();
@@ -31,6 +30,7 @@ public class PackageScanner {
         }
         return result;
     }
+    @SuppressWarnings("unchecked")
     public Set<Class<?>> getTypesAnnotatedWith(Class<?> annotationClass) throws IOException, ClassNotFoundException {
         Set<Class<?>> allClasses = scan();
         Set<Class<?>> result = new HashSet<>();
@@ -86,7 +86,7 @@ public class PackageScanner {
     }
 
     private String convertToClassName(String packagePath, String name) {
-        return packageToScan + "." + name.substring(0, name.length() - 6 );
+        return packagePath.replace('/','.') + "." + name.substring(0, name.length() - 6 );
     }
 
     private Set<Class<?>> scanFileSystem(URL resource, String packagePath) throws MalformedURLException, ClassNotFoundException {

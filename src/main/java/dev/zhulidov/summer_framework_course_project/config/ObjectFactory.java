@@ -1,13 +1,14 @@
 package dev.zhulidov.summer_framework_course_project.config;
 
 
+import dev.zhulidov.summer_framework_course_project.config.annotations.Inject;
 import dev.zhulidov.summer_framework_course_project.config.annotations.PostConstruct;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class ObjectFactory {
     private ApplicationContext context;
@@ -20,14 +21,14 @@ public class ObjectFactory {
         }
     }
 
-    public <T> T createObject(Class<? extends T> implClass) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
+    public <T> T createObject(Class<? extends T> implClass) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException, IOException, ClassNotFoundException {
         T t = create(implClass);
-        cofigure(t);
+        configure(t);
         invokeInit(implClass, t);
         return t;
     }
 
-    private <T> void invokeInit(Class<? extends T> implClass, T t) throws InvocationTargetException, IllegalAccessException {
+    public  <T> void invokeInit(Class<? extends T> implClass, T t) throws InvocationTargetException, IllegalAccessException {
         for (Method method : implClass.getMethods()){
             if (method.isAnnotationPresent(PostConstruct.class)){
                 method.setAccessible(true);
@@ -36,7 +37,7 @@ public class ObjectFactory {
         }
     }
 
-    private <T> void cofigure(T t) {
+    public  <T> void configure(T t) {
         configurators.forEach(objectConfigurator -> {
             try {
                 objectConfigurator.configure(t, context);
@@ -48,8 +49,22 @@ public class ObjectFactory {
             }
         });
     }
+    @SuppressWarnings("unchecked")
+    public  <T> T create(Class<? extends T> implClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException, ClassNotFoundException {
+        List<Object> dependencies = new ArrayList<>();
+        for (Constructor<?> constructor : implClass.getDeclaredConstructors()){
+           if (constructor.isAnnotationPresent(Inject.class)){
+              Class<?>[] types =  constructor.getParameterTypes();
+               for (Class<?> Aclass : types){
+                 Object  o = context.getObject(Aclass);
+                 dependencies.add(o);
+               }
 
-    private <T> T create(Class<? extends T> implClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+              return (T) constructor.newInstance(dependencies.toArray());
+           }
+       }
+
+
         return implClass.getDeclaredConstructor().newInstance();
 
     }

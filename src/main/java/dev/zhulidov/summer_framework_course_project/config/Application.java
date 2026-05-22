@@ -12,11 +12,13 @@ public class Application {
             Object component = context.getObject(mainComponent);
             if (component instanceof Runnable) {
                 ((Runnable) component).run();
-            } else if (component instanceof AutoCloseable) {
+            } else  {
                 try {
                     mainComponent.getMethod("run").invoke(component);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException("Метод run не найден, создайте метод run запускающий приложение");
+                } catch (IllegalAccessException e){
+                    throw new RuntimeException("Произошла ошибка внутри метода run");
                 }
             }
         } catch (NoSuchMethodException e) {
