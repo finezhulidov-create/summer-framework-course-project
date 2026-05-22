@@ -2,6 +2,7 @@ package dev.zhulidov.summer_framework_course_project.config;
 
 
 import dev.zhulidov.summer_framework_course_project.config.annotations.AppComponent;
+import dev.zhulidov.summer_framework_course_project.config.annotations.Scope;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -24,7 +25,7 @@ public class ApplicationContext {
     public <T> T getObject(Class<T> type) throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
         return getObject(type,null);
     }
-
+    @SuppressWarnings({"unchecked"})
     public <T> T getObject(Class<T> type, String qualifier) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException, IOException, ClassNotFoundException {
         if (cache.containsKey(type) && qualifier == null) {
             return (T) cache.get(type);
@@ -34,13 +35,22 @@ public class ApplicationContext {
             implClass = config.getImplClass(type, qualifier);
         }
         T t = factory.create(implClass);
-        cache.put(type,t);
-        factory.configure(cache.get(type));
-        factory.invokeInit(implClass,t);
-        if (hasAnnotation(implClass, AppComponent.class) && qualifier == null){
+        if ( implClass.isAnnotationPresent(Scope.class) &&
+                implClass.getAnnotation(Scope.class).value().equalsIgnoreCase("prototype")){
+
+                factory.configure(t);
+                factory.invokeInit(implClass, t);
+                return t;
+
+        } else  {
             cache.put(type, t);
+            factory.configure(cache.get(type));
+            factory.invokeInit(implClass, t);
+            if (qualifier == null) {
+                cache.put(type, t);
+            }
+            return t;
         }
-        return t;
     }
 
     private boolean hasAnnotation(Class<?> clazz, Class<? extends Annotation> annotation){
