@@ -13,7 +13,7 @@ import java.util.*;
 public class ObjectFactory {
     private ApplicationContext context;
     private List<ObjectConfigurator> configurators = new ArrayList<>();
-    private Set<Class<?>> inCreation = new HashSet<>();
+    private ThreadLocal<Set<Class<?>>> inCreation = ThreadLocal.withInitial(HashSet::new);
 
     public ObjectFactory(ApplicationContext context) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException, ClassNotFoundException {
         this.context = context;
@@ -54,10 +54,10 @@ public class ObjectFactory {
     public  <T> T create(Class<? extends T> implClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException, ClassNotFoundException {
         List<Object> dependencies = new ArrayList<>();
 
-        if (inCreation.contains(implClass)){
+        if (inCreation.get().contains(implClass)){
             throw new RuntimeException("Circular dependency detected" + implClass.getName());
         }
-        inCreation.add(implClass);
+        inCreation.get().add(implClass);
         for (Constructor<?> constructor : implClass.getDeclaredConstructors()){
            if (constructor.isAnnotationPresent(Inject.class)){
               Class<?>[] types =  constructor.getParameterTypes();
@@ -66,13 +66,13 @@ public class ObjectFactory {
                  dependencies.add(o);
 
                }
-               inCreation.remove(implClass);
+               inCreation.get().remove(implClass);
               return (T) constructor.newInstance(dependencies.toArray());
 
            }
        }
 
-        inCreation.remove(implClass);
+        inCreation.get().remove(implClass);
         return implClass.getDeclaredConstructor().newInstance();
 
     }
