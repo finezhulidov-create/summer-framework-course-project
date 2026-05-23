@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 public class Application {
-    public static void run(Class<?> mainComponent, String... args )  {
+    public static void run(Class<?> mainComponent)  {
         try {
             ApplicationContext context = getApplicationContext(mainComponent);
             Object component = context.getObject(mainComponent);
