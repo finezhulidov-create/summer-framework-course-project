@@ -41,9 +41,11 @@ public class Application {
             packageToscan = mainComponent.getPackage().getName().split("\\.")[0];
         }
         JavaConfig config = new JavaConfig(packageToscan);
+
         ApplicationContext context = new ApplicationContext(config);
-        ObjectFactory factory = new ObjectFactory(context);
-        context.setFactory(factory);
+
+        ObjectRegistrator registrator = new BeanObjectRegistrator();
+        registrator.register(context);
         return context;
     }
 

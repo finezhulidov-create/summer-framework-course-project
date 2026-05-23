@@ -11,17 +11,18 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class ApplicationContext implements Closeable {
-    private  Map<Class<?>, Object> cache = new HashMap<>();
+    private  Map<Class<?>, Object> cache = new ConcurrentHashMap<>();
     private JavaConfig config;
-    private ObjectFactory factory;
+    private final ObjectFactory factory;
 
 
     public ApplicationContext(JavaConfig config) throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
         this.config = config;
-        new BeanObjectRegistrator().register(this);
+        this.factory = new ObjectFactory(this);
     }
 
     public <T> T getObject(Class<T> type) throws IOException, ClassNotFoundException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
@@ -75,9 +76,7 @@ public class ApplicationContext implements Closeable {
         return config;
     }
 
-    public void setFactory(ObjectFactory factory) {
-        this.factory = factory;
-    }
+
 
     @Override
     public void close() {
