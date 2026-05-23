@@ -2,16 +2,18 @@ package dev.zhulidov.summer_framework_course_project.config;
 
 
 import dev.zhulidov.summer_framework_course_project.config.annotations.AppComponent;
+import dev.zhulidov.summer_framework_course_project.config.annotations.PreDestroy;
 import dev.zhulidov.summer_framework_course_project.config.annotations.Scope;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Method;
+import java.util.*;
 
 
-public class ApplicationContext {
+public class ApplicationContext implements Closeable {
     private  Map<Class<?>, Object> cache = new HashMap<>();
     private JavaConfig config;
     private ObjectFactory factory;
@@ -75,5 +77,24 @@ public class ApplicationContext {
 
     public void setFactory(ObjectFactory factory) {
         this.factory = factory;
+    }
+
+    @Override
+    public void close() {
+        for (Class<?> bean: cache.keySet()){
+            Arrays.stream(bean.getMethods())
+                    .forEach(method -> {
+                        if (method.isAnnotationPresent(PreDestroy.class)){
+                            method.setAccessible(true);
+                            try {
+                                method.invoke(cache.get(bean));
+                            } catch (IllegalAccessException e) {
+                                throw new RuntimeException(e);
+                            } catch (InvocationTargetException e) {
+                                throw new RuntimeException("Не получилось вызвать метод");
+                            }
+                        }
+                    });
+        }
     }
 }
