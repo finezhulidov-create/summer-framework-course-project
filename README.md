@@ -77,7 +77,16 @@ MyService service = context.getObject(MyService.class);
 ```
 
 ---
+Если не нужен доступ к контексту:
+```java
+public class Main {
 
+    public static void main(String[] args)  {
+        Application.run(Main.class);
+    }
+
+}
+```
 ## Аннотации
 
 ### Компонентные аннотации
