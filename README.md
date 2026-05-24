@@ -327,8 +327,23 @@ getObject(Type)
 ```
 
 ---
+## Подключение через Maven без токена
+[![](https://jitpack.io/v/finezhulidov-create/summer-framework-course-project.svg)](https://jitpack.io/#finezhulidov-create/summer-framework-course-project)
+```xml
+<repositories>
+		<repository>
+		    <id>jitpack.io</id>
+		    <url>https://jitpack.io</url>
+		</repository>
+	</repositories>
 
-## Подключение через Maven
+<dependency>
+	    <groupId>com.github.finezhulidov-create</groupId>
+	    <artifactId>summer-framework-course-project</artifactId>
+	    <version>v1.0.2</version>
+	</dependency>
+```
+## Подключение через Maven с токеном
 
 Добавь репозиторий и зависимость в `pom.xml`:
 
