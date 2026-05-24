@@ -90,7 +90,7 @@ public class ApplicationContext implements Closeable {
                             } catch (IllegalAccessException e) {
                                 throw new RuntimeException(e);
                             } catch (InvocationTargetException e) {
-                                throw new RuntimeException("Не получилось вызвать метод");
+                                throw new RuntimeException("Не получилось вызвать метод" + e.getCause(),e);
                             }
                         }
                     });
