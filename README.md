@@ -340,7 +340,7 @@ getObject(Type)
 <dependency>
 	    <groupId>com.github.finezhulidov-create</groupId>
 	    <artifactId>summer-framework-course-project</artifactId>
-	    <version>Tag</version>
+	    <version>v1.0.2</version>
 	</dependency>
 ```
 ## Подключение через Maven с токеном
