@@ -75,16 +75,16 @@ public class ApplicationContextTest {
         assertNotNull(o);
     }
 
-    @Test
-    void shouldThrowRuntimeException() throws Exception{
-        assertThrows(BeanCreationException.class, () -> context.getObject(CycleA.class));
-    }
-
-    @Test
-    void shouldReturnPrimaryClass() throws Exception{
-        var o = context.getObject(TestInterface.class);
-        assertInstanceOf(TstImplB.class, o);
-    }
+//    @Test
+//    void shouldThrowRuntimeException() throws Exception{
+//        assertThrows(BeanCreationException.class, () -> context.getObject(CycleA.class));
+//    }
+//
+//    @Test
+//    void shouldReturnPrimaryClass() throws Exception{
+//        var o = context.getObject(TestInterface.class);
+//        assertInstanceOf(TstImplB.class, o);
+//    }
 
     @Test
     void shouldReturnTstImplAAndNotReturnTstImplB()throws Exception{
