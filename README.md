@@ -1,194 +1,375 @@
-# Summer Framework
+# ☀️ Summer Framework
 
-Summer Framework - это легковесный DI-контейнер, вдохновленный Spring Framework, реализованный с нуля на чистом Java без внешних зависимостей.
+Лёгкий IoC-контейнер на Java — учебный аналог Spring Framework.  
+Реализует ключевые механизмы инверсии управления и внедрения зависимостей.
 
-## Особенности
+---
 
-- Внедрение зависимостей (DI)
-- Автоматическое сканирование компонентов
-- Поддержка аннотаций
-- Гибкая конфигурация
-- Минималистичный и понятный код
+## 📋 Содержание
 
-## Аннотации
+- [Возможности](#возможности)
+- [Быстрый старт](#быстрый-старт)
+- [Аннотации](#аннотации)
+- [Внедрение зависимостей](#внедрение-зависимостей)
+- [Области видимости](#области-видимости)
+- [Жизненный цикл бина](#жизненный-цикл-бина)
+- [Конфигурация через @Configuration](#конфигурация-через-configuration)
+- [Работа с application.properties](#работа-с-applicationproperties)
+- [Разрешение неоднозначностей](#разрешение-неоднозначностей)
+- [Исключения](#исключения)
+- [Архитектура](#архитектура)
+- [Подключение через Maven](#подключение-через-maven)
 
-### @Component
-Помечает класс как компонент, управляемый контейнером.
+---
+
+## Возможности
+
+- Автоматическое сканирование пакетов (файловая система и JAR)
+- Field injection и constructor injection через `@Inject`
+- Поддержка мета-аннотаций (`@Service`, `@Controller`, `@Repository`)
+- Управление областью видимости: `singleton` и `prototype`
+- Полный жизненный цикл бина: `@PostConstruct` и `@PreDestroy`
+- Разрешение реализаций через `@Primary`, `@Qualifier`, `@ComponentName`
+- Регистрация сторонних объектов через `@Configuration` и `@Bean`
+- Внедрение значений из `application.properties` через `@Value`
+- Обнаружение циклических зависимостей при конструкторной инъекции
+- Локализованные сообщения об ошибках (русский и английский)
+- Расширяемость через интерфейс `ObjectConfigurator`
+
+---
+
+## Быстрый старт
+
+### 1. Создай главный класс
 
 ```java
-@Component
-public class UserService {
-    // ...
+@ComponentScan
+public class Main {
+    public static void main(String[] args) {
+        Application.run(Main.class);
+    }
 }
 ```
 
-### @Service, @Repository, @Controller
-Специализированные компоненты для разных слоев приложения.
+### 2. Создай компонент с логикой запуска
 
 ```java
 @Service
-public class UserService {
-    // ...
-}
+public class MyApp {
 
-@Repository
-public class UserRepository {
-    // ...
-}
+    @Inject
+    private MyService myService;
 
-@Controller
-public class UserController {
-    // ...
+    @PostConstruct
+    public void init() {
+        myService.doSomething();
+    }
 }
 ```
 
-### @Inject
-Внедряет зависимости в поля.
+### 3. Запусти — фреймворк сам найдёт все компоненты, внедрит зависимости и вызовет `@PostConstruct`
+
+Если нужен доступ к контексту:
+
+```java
+ApplicationContext context = Application.getContext(Main.class);
+MyService service = context.getObject(MyService.class);
+```
+
+---
+
+## Аннотации
+
+### Компонентные аннотации
+
+| Аннотация | Применяется к | Описание |
+|---|---|---|
+| `@AppComponent` | Класс | Базовый маркер управляемого компонента |
+| `@Service` | Класс | Для сервисного слоя (мета-аннотация над `@AppComponent`) |
+| `@Controller` | Класс | Для контроллеров (мета-аннотация над `@AppComponent`) |
+| `@Repository` | Класс | Для репозиториев (мета-аннотация над `@AppComponent`) |
+| `@Configuration` | Класс | Для конфигурационных классов с `@Bean`-методами |
+
+### Аннотации зависимостей
+
+| Аннотация | Применяется к | Описание |
+|---|---|---|
+| `@Inject` | Поле, конструктор | Внедрение зависимости |
+| `@Qualifier` | Поле, параметр | Уточнение реализации по имени |
+| `@Primary` | Класс | Приоритетная реализация при неоднозначности |
+| `@ComponentName` | Класс | Псевдоним компонента для `@Qualifier` |
+
+### Остальные аннотации
+
+| Аннотация | Применяется к | Описание |
+|---|---|---|
+| `@ComponentScan` | Класс | Указание корневого пакета для сканирования |
+| `@Scope` | Класс | Область видимости бина (`singleton` / `prototype`) |
+| `@Bean` | Метод | Регистрация объекта из `@Configuration`-класса |
+| `@PostConstruct` | Метод | Вызывается после создания и конфигурирования бина |
+| `@PreDestroy` | Метод | Вызывается при завершении приложения |
+| `@Value` | Поле | Внедрение значения из `application.properties` |
+
+---
+
+## Внедрение зависимостей
+
+### Field injection
 
 ```java
 @Service
 public class OrderService {
-    
-    @Inject
-    private UserService userService;
-    
+
     @Inject
     private PaymentService paymentService;
 }
 ```
 
-### @Primary
-Указывает приоритетную реализацию при наличии нескольких вариантов.
-
-```java
-@Component
-@Primary
-public class DatabaseUserService implements UserService {
-    // ...
-}
-
-@Component
-public class FileUserService implements UserService {
-    // ...
-}
-```
-
-### @Qualifier
-Позволяет явно указать, какую реализацию использовать.
+### Constructor injection
 
 ```java
 @Service
 public class OrderService {
-    
+
+    private final PaymentService paymentService;
+
     @Inject
-    @Qualifier("databaseUserService")
-    private UserService userService;
+    public OrderService(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
 }
 ```
 
-### @PostConstruct
-Метод с этой аннотацией выполняется после создания бина.
+---
+
+## Области видимости
+
+По умолчанию все бины — **singleton**: создаются один раз и переиспользуются.
+
+```java
+// Singleton — один экземпляр на контейнер (по умолчанию)
+@Service
+public class UserService { }
+
+// Prototype — новый экземпляр при каждом getObject()
+@Service
+@Scope("prototype")
+public class ShoppingCart { }
+```
+
+---
+
+## Жизненный цикл бина
+
+```
+Создание → configure() → @PostConstruct → использование → @PreDestroy
+```
+
+```java
+@Service
+public class CacheService {
+
+    @PostConstruct
+    public void init() {
+        // вызывается автоматически после внедрения зависимостей
+        System.out.println("Кэш инициализирован");
+    }
+
+    @PreDestroy
+    public void destroy() {
+        // вызывается автоматически при завершении приложения
+        System.out.println("Кэш очищен");
+    }
+}
+```
+
+---
+
+## Конфигурация через @Configuration
+
+Для регистрации объектов из сторонних библиотек (без возможности пометить `@AppComponent`):
+
+```java
+@Configuration
+public class InfrastructureConfig {
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+}
+```
+
+---
+
+## Работа с application.properties
+
+Создай файл `src/main/resources/application.properties`:
+
+```properties
+db.url=jdbc:postgresql://localhost:5432/mydb
+db.username=admin
+db.password=secret
+```
+
+Внедри значения через `@Value`:
 
 ```java
 @Service
 public class DatabaseService {
-    
-    @PostConstruct
-    public void init() {
-        // Инициализация базы данных
-    }
+
+    @Value("${db.url}")
+    private String dbUrl;
+
+    @Value("${db.username}")
+    private String username;
 }
 ```
 
-## Быстрый старт
+---
 
-### 1. Добавьте зависимость
+## Разрешение неоднозначностей
 
-Установите JAR-файл в локальный репозиторий Maven:
+Если для интерфейса есть несколько реализаций — фреймворк выбирает по приоритету:
 
-```bash
-mvn install:install-file -Dfile="path/to/summer-framework-course-project-1.0-SNAPSHOT.jar" -DgroupId=dev.zhulidov -DartifactId=summer-framework-course-project -Dversion=1.0-SNAPSHOT -Dpackaging=jar
-```
-
-Добавьте зависимость в `pom.xml`:
-
-```xml
-<dependency>
-    <groupId>dev.zhulidov</groupId>
-    <artifactId>summer-framework-course-project</artifactId>
-    <version>1.0-SNAPSHOT</version>
-</dependency>
-```
-
-### 2. Создайте основной класс приложения
+**1. По квалификатору:**
 
 ```java
-@ComponentScan(basePackage = "com.example")
-public class Application {
-    
-    public static void main(String[] args) {
-        ApplicationContext context = Summer.run(Application.class, args);
-    }
-}
+@Inject
+@Qualifier("cashPaymentService")
+private PaymentService paymentService;
 ```
 
-### 3. Создайте компоненты
+**2. По `@Primary`:**
 
 ```java
 @Service
-public class UserService {
-    
-    public void createUser(String name) {
-        System.out.println("Создан пользователь: " + name);
-    }
-}
+@Primary
+public class OnlinePaymentService implements PaymentService { }
 ```
+
+**3. По `@ComponentName`:**
 
 ```java
 @Service
-public class NotificationService {
-    
-    @Inject
-    private EmailService emailService;
-    
-    public void notifyUser(String user, String message) {
-        emailService.sendEmail(user + "@example.com", message);
+@ComponentName("cash")
+public class CashPaymentService implements PaymentService { }
+
+// использование:
+@Inject
+@Qualifier("cash")
+private PaymentService paymentService;
+```
+
+---
+
+## Исключения
+
+Все исключения фреймворка наследуют `SummerFrameworkException`:
+
+```
+SummerFrameworkException
+    ├── ContextCreationException     — ошибка создания контекста
+    ├── BeanCreationException        — ошибка создания объекта
+    ├── BeanConfigurationException   — ошибка конфигурирования
+    ├── BeanNotFoundException        — реализация не найдена
+    └── CircularDependencyException  — циклическая зависимость
+```
+
+Сообщения об ошибках локализованы — на русской системе выводятся на русском,
+на остальных — на английском.
+
+---
+
+## Расширяемость
+
+Добавь собственную логику конфигурирования объектов через `ObjectConfigurator`:
+
+```java
+@AppComponent
+public class MyCustomConfigurator implements ObjectConfigurator {
+
+    @Override
+    public void configure(Object t, ApplicationContext context) throws ... {
+        // своя логика — например чтение значений из переменных окружения
     }
 }
 ```
 
-## Сборка
+Фреймворк подхватит его автоматически — без изменения кода фреймворка.
 
-Соберите проект с помощью Maven:
-
-```bash
-mvn clean package
-```
-
-JAR-файл будет создан в папке `target/`.
+---
 
 ## Архитектура
 
 ```
-summer-framework-course-project/
-├── src/
-│   └── main/
-│       └── java/
-│           └── dev/
-│               └── zhulidov/
-│                   └── summer_framework_course_project/
-│                       ├── config/
-│                       │   ├── annotations/
-│                       │   ├── Application.java
-│                       │   ├── ApplicationContext.java
-│                       │   ├── JavaConfig.java
-│                       │   ├── ObjectFactory.java
-│                       │   └── scanner/
-│                       │       └── PackageScanner.java
-│                       └── Summer.java
-└── pom.xml
+Application
+    └── ApplicationContext      — IoC-контейнер, кэш бинов (ConcurrentHashMap)
+            ├── JavaConfig      — разрешение реализаций интерфейсов
+            ├── ObjectFactory   — создание, конфигурирование, инициализация бинов
+            │       └── ObjectConfigurator (список)
+            │               ├── InjectAnnotationObjectConfigurator
+            │               └── ValueAnnotationObjectConfigurator
+            └── BeanObjectRegistrator — регистрация @Bean-объектов
 ```
 
-## Лицензия
+### Поток создания бина
 
-MIT License
+```
+getObject(Type)
+    → проверка кэша
+    → JavaConfig.getImplClass() — поиск реализации
+    → ObjectFactory.create()    — создание экземпляра
+    → cache.put()               — ранняя регистрация (разрывает циклы field injection)
+    → ObjectFactory.configure() — заполнение @Inject полей
+    → ObjectFactory.invokeInit()— вызов @PostConstruct
+    → return объект
+```
+
+---
+
+## Подключение через Maven
+
+Добавь репозиторий и зависимость в `pom.xml`:
+
+```xml
+<repositories>
+    <repository>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/finezhulidov-create/summer-framework-course-project</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>dev.zhulidov</groupId>
+        <artifactId>summer-framework-course-project</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </dependency>
+</dependencies>
+```
+
+Добавь в `~/.m2/settings.xml` токен с правом `read:packages`:
+
+```xml
+<settings>
+    <servers>
+        <server>
+            <id>github</id>
+            <username>ВАШ_GITHUB_USERNAME</username>
+            <password>ВАШ_GITHUB_TOKEN</password>
+        </server>
+    </servers>
+</settings>
+```
+
+---
+
+## Требования
+
+- Java 17+
+- Maven 3.6+
+
+---
+
+*Summer Framework — учебный проект. Жулидов Александр Дмитриевич, УрФУ ИРИТ-РТФ, 2026*
