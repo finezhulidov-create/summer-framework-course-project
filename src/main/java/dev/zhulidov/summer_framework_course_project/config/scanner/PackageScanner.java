@@ -24,7 +24,7 @@ public class PackageScanner {
 @SuppressWarnings("unchecked")
     public <T> Set<Class<? extends T>> getSubTypesOf(Class<T> ifc) throws IOException, ClassNotFoundException {
         Set<Class<?>> allClasses = scan();
-        Set<Class<? extends T>> result = new HashSet<>();
+    Set<Class<? extends T>> result = new HashSet<>();
         for (Class<?> clazz : allClasses){
             if (ifc.isAssignableFrom(clazz) && !clazz.equals(ifc)){
                 result.add((Class<? extends T>) clazz);
@@ -45,7 +45,7 @@ public class PackageScanner {
 
         return result;
     }
-  private   Set<Class<?>> scan() throws IOException, ClassNotFoundException {
+    Set<Class<?>> scan() throws IOException, ClassNotFoundException {
         Set<Class<?>> classes = new HashSet<>();
         String packagePath = packageToScan.replace('.','/');
 
@@ -94,14 +94,13 @@ public class PackageScanner {
     private Set<Class<?>> scanFileSystem(URL resource, String packagePath) throws MalformedURLException, ClassNotFoundException {
         Set<Class<?>> classes = new HashSet<>();
         File directory = new File(resource.getFile());
-
-        if (directory.exists() && directory.isDirectory()){
+       if (directory.exists() && directory.isDirectory()){
             File[] files = directory.listFiles();
             if (files != null){
                 for (File file : files){
                     if (file.isDirectory()){
                         String subPackage = packagePath + "/" + file.getName();
-                        URL subPackageUrl = new URL(resource, file.getName() + "/");
+                        URL subPackageUrl = file.toURI().toURL();
                         classes.addAll(scanFileSystem(subPackageUrl, subPackage));
                     } else if (file.getName().endsWith(".class")) {
                         String className = convertToClassName(packagePath, file.getName());
