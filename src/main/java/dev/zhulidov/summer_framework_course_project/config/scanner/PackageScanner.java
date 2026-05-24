@@ -45,7 +45,7 @@ public class PackageScanner {
 
         return result;
     }
-    Set<Class<?>> scan() throws IOException, ClassNotFoundException {
+   private Set<Class<?>> scan() throws IOException, ClassNotFoundException {
         Set<Class<?>> classes = new HashSet<>();
         String packagePath = packageToScan.replace('.','/');
 
