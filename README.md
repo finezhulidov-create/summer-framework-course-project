@@ -336,12 +336,13 @@ getObject(Type)
 		    <url>https://jitpack.io</url>
 		</repository>
 	</repositories>
-
+<dependencies>
 <dependency>
 	    <groupId>com.github.finezhulidov-create</groupId>
 	    <artifactId>summer-framework-course-project</artifactId>
-	    <version>v1.0.2</version>
+	    <version>version</version>
 	</dependency>
+</dependencies>
 ```
 ## Подключение через Maven с токеном
 
