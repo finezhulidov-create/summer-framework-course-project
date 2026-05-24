@@ -1,44 +1,38 @@
 package dev.zhulidov.summer_framework_course_project.config;
 
+import dev.zhulidov.summer_framework_course_project.config.annotations.AppComponent;
 import dev.zhulidov.summer_framework_course_project.config.annotations.ComponentScan;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Set;
 
 public class Application {
-    public static void run(Class<?> mainComponent)  {
+
+public static void run(Class<?> mainComponent)  {
+
+    Application.getContext(mainComponent);
+
+}
+    public static ApplicationContext getContext(Class<?> mainComponent)  {
         try {
-            ApplicationContext context = getApplicationContext(mainComponent);
-            Object component = context.getObject(mainComponent);
-            if (component instanceof Runnable) {
-                ((Runnable) component).run();
-            } else  {
-                try {
-                    mainComponent.getMethod("run").invoke(component);
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException("Метод run не найден, создайте метод run запускающий приложение");
-                } catch (IllegalAccessException e){
-                    throw new RuntimeException("Произошла ошибка внутри метода run");
-                }
-            }
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException();
-        } catch (IllegalAccessException e) {
+           var context = getApplicationContext(mainComponent);
+           Runtime.getRuntime().addShutdownHook(new Thread(context::close));
+           return context;
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException |
+                 IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Ошибка при вызове метода");
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка создания контекста");
         }
+
     }
 
-    private static ApplicationContext getApplicationContext(Class<?> mainComponent) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException, ClassNotFoundException {
+    public static ApplicationContext getApplicationContext(Class<?> mainComponent) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException, ClassNotFoundException {
         ComponentScan componentScan = mainComponent.getAnnotation(ComponentScan.class);
         String packageToscan;
         if (componentScan != null && !componentScan.basePackage().isEmpty()){
             packageToscan = componentScan.basePackage();
         } else {
-            packageToscan = mainComponent.getPackage().getName().split("\\.")[0];
+            packageToscan = mainComponent.getPackage().getName();
         }
         JavaConfig config = new JavaConfig(packageToscan);
 
@@ -46,6 +40,11 @@ public class Application {
 
         ObjectRegistrator registrator = new BeanObjectRegistrator();
         registrator.register(context);
+        Set<Class<?>> components = context.getConfig().getScanner()
+                .getTypesAnnotatedWith(AppComponent.class);
+        for (Class<?> aClass: components){
+            context.getObject(aClass);
+        }
         return context;
     }
 

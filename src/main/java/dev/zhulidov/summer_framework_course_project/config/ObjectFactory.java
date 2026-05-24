@@ -3,23 +3,47 @@ package dev.zhulidov.summer_framework_course_project.config;
 
 import dev.zhulidov.summer_framework_course_project.config.annotations.Inject;
 import dev.zhulidov.summer_framework_course_project.config.annotations.PostConstruct;
+import dev.zhulidov.summer_framework_course_project.config.scanner.PackageScanner;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class ObjectFactory {
+    private static final Logger log = Logger.getLogger(ObjectFactory.class.getName());
     private ApplicationContext context;
     private List<ObjectConfigurator> configurators = new ArrayList<>();
     private ThreadLocal<Set<Class<?>>> inCreation = ThreadLocal.withInitial(HashSet::new);
 
     public ObjectFactory(ApplicationContext context) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException, ClassNotFoundException {
         this.context = context;
-        for (Class<? extends ObjectConfigurator> aClass : context.getConfig().getScanner().getSubTypesOf(ObjectConfigurator.class)){
+        this.configurators = scanFrameworkConfigurators();
+        for (Class<? extends ObjectConfigurator> aClass : context.getConfig()
+                .getScanner().getSubTypesOf(ObjectConfigurator.class)){
             configurators.add(aClass.getDeclaredConstructor().newInstance());
         }
+
+    }
+
+    private List<ObjectConfigurator> scanFrameworkConfigurators() throws IOException, ClassNotFoundException {
+        PackageScanner frameworkScan = new PackageScanner(InjectAnnotationObjectConfigurator.class.getPackageName());
+        return frameworkScan.getSubTypesOf(ObjectConfigurator.class).stream()
+                .map(aClass -> {
+                    try{
+                        return aClass.getDeclaredConstructor().newInstance();
+                    } catch (Exception e) {
+                        try {
+                            log.severe("Произошла ошибка при выполнении конструктора " + aClass.getDeclaredConstructor().getName() + " " + e.getMessage());
+                        } catch (NoSuchMethodException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                        throw new RuntimeException(e);
+                    }
+                }).collect(Collectors.toCollection(ArrayList::new));
     }
 
     public <T> T createObject(Class<? extends T> implClass) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException, IOException, ClassNotFoundException {
@@ -42,11 +66,14 @@ public class ObjectFactory {
         configurators.forEach(objectConfigurator -> {
             try {
                 objectConfigurator.configure(t, context);
+                log.info("Объект класса: " + t.getClass().getName() +" успешно сконфигурирован");
             } catch (IllegalAccessException | InstantiationException | InvocationTargetException |
                      NoSuchMethodException | IOException e) {
+                log.severe("Ошибка конфигурирования объекта " + t.getClass().getName() + ": " + e.getMessage());
                 throw new RuntimeException(e);
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException("d");
+                log.severe("Класс: " + t.getClass().getName()+ "Не найден");
+                throw new RuntimeException(e);
             }
         });
     }
@@ -55,8 +82,10 @@ public class ObjectFactory {
         List<Object> dependencies = new ArrayList<>();
 
         if (inCreation.get().contains(implClass)){
+            log.severe("Найдена циклическая зависимoсть " + implClass.getName());
             throw new RuntimeException("Circular dependency detected" + implClass.getName());
         }
+        log.info("Начинается создание объекта из класса: " + implClass.getName());
         inCreation.get().add(implClass);
         for (Constructor<?> constructor : implClass.getDeclaredConstructors()){
            if (constructor.isAnnotationPresent(Inject.class)){
@@ -64,15 +93,17 @@ public class ObjectFactory {
                for (Class<?> Aclass : types){
                  Object  o = context.getObject(Aclass);
                  dependencies.add(o);
-
+                 log.info("Добавлена зависимость в конструктор " + constructor.getName());
                }
                inCreation.get().remove(implClass);
+               log.info("Создан объект из класса: " + implClass.getName());
               return (T) constructor.newInstance(dependencies.toArray());
 
            }
        }
 
         inCreation.get().remove(implClass);
+        log.info("Создан объект из класса: " + implClass.getName());
         return implClass.getDeclaredConstructor().newInstance();
 
     }

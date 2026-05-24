@@ -1,5 +1,7 @@
 package dev.zhulidov.summer_framework_course_project.config.scanner;
 
+import dev.zhulidov.summer_framework_course_project.config.utils.AnnotationUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -36,14 +38,14 @@ public class PackageScanner {
         Set<Class<?>> result = new HashSet<>();
 
         for (Class<?> clazz : allClasses) {
-            if (clazz.isAnnotationPresent((Class<? extends Annotation>) annotationClass)) {
+            if (AnnotationUtils.hasAnnotation(clazz, (Class<? extends Annotation>) annotationClass)) {
                 result.add(clazz);
             }
         }
 
         return result;
     }
-    private Set<Class<?>> scan() throws IOException, ClassNotFoundException {
+  private   Set<Class<?>> scan() throws IOException, ClassNotFoundException {
         Set<Class<?>> classes = new HashSet<>();
         String packagePath = packageToScan.replace('.','/');
 
