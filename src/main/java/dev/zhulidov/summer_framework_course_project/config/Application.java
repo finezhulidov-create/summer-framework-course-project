@@ -2,6 +2,8 @@ package dev.zhulidov.summer_framework_course_project.config;
 
 import dev.zhulidov.summer_framework_course_project.config.annotations.AppComponent;
 import dev.zhulidov.summer_framework_course_project.config.annotations.ComponentScan;
+import dev.zhulidov.summer_framework_course_project.config.exceptions.ContextCreationException;
+import dev.zhulidov.summer_framework_course_project.config.utils.MessageSource;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -21,7 +23,7 @@ public static void run(Class<?> mainComponent)  {
            return context;
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException |
                  IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new ContextCreationException(MessageSource.getMessage("context.creation.error", e));
         }
 
     }

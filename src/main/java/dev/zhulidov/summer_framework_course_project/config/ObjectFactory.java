@@ -3,7 +3,11 @@ package dev.zhulidov.summer_framework_course_project.config;
 
 import dev.zhulidov.summer_framework_course_project.config.annotations.Inject;
 import dev.zhulidov.summer_framework_course_project.config.annotations.PostConstruct;
+import dev.zhulidov.summer_framework_course_project.config.exceptions.BeanConfigurationException;
+import dev.zhulidov.summer_framework_course_project.config.exceptions.BeanCreationException;
+import dev.zhulidov.summer_framework_course_project.config.exceptions.CircularDependencyException;
 import dev.zhulidov.summer_framework_course_project.config.scanner.PackageScanner;
+import dev.zhulidov.summer_framework_course_project.config.utils.MessageSource;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -70,10 +74,10 @@ public class ObjectFactory {
             } catch (IllegalAccessException | InstantiationException | InvocationTargetException |
                      NoSuchMethodException | IOException e) {
                 log.severe("Ошибка конфигурирования объекта " + t.getClass().getName() + ": " + e.getMessage());
-                throw new RuntimeException(e);
+                throw new BeanConfigurationException("Проверьте правильность конфигурирования объектов и проверьте логи");
             } catch (ClassNotFoundException e) {
                 log.severe("Класс: " + t.getClass().getName()+ "Не найден");
-                throw new RuntimeException(e);
+                throw new BeanConfigurationException("Класс не найден или не существует, проверьте логи"+e);
             }
         });
     }
@@ -83,7 +87,7 @@ public class ObjectFactory {
 
         if (inCreation.get().contains(implClass)){
             log.severe("Найдена циклическая зависимoсть " + implClass.getName());
-            throw new RuntimeException("Circular dependency detected" + implClass.getName());
+            throw new CircularDependencyException(MessageSource.getMessage("circular.dependency",implClass.getName()));
         }
         log.info("Начинается создание объекта из класса: " + implClass.getName());
         inCreation.get().add(implClass);

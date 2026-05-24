@@ -2,6 +2,8 @@ package dev.zhulidov.summer_framework_course_project.config.scanner;
 
 import dev.zhulidov.summer_framework_course_project.config.Application;
 import dev.zhulidov.summer_framework_course_project.config.ApplicationContext;
+import dev.zhulidov.summer_framework_course_project.config.exceptions.BeanCreationException;
+import dev.zhulidov.summer_framework_course_project.config.exceptions.BeanNotFoundException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,7 +77,7 @@ public class ApplicationContextTest {
 
     @Test
     void shouldThrowRuntimeException() throws Exception{
-        assertThrows(RuntimeException.class, () -> context.getObject(CycleA.class));
+        assertThrows(BeanCreationException.class, () -> context.getObject(CycleA.class));
     }
 
     @Test

@@ -4,7 +4,9 @@ package dev.zhulidov.summer_framework_course_project.config;
 
 import dev.zhulidov.summer_framework_course_project.config.annotations.ComponentName;
 import dev.zhulidov.summer_framework_course_project.config.annotations.Primary;
+import dev.zhulidov.summer_framework_course_project.config.exceptions.BeanNotFoundException;
 import dev.zhulidov.summer_framework_course_project.config.scanner.PackageScanner;
+import dev.zhulidov.summer_framework_course_project.config.utils.MessageSource;
 
 
 import java.io.IOException;
@@ -26,7 +28,7 @@ public class JavaConfig {
         Set<Class<? extends T>> classes = scanner.getSubTypesOf(ifc);
         if (classes.isEmpty()){
             log.severe("Имплементации для интерфейса "+ ifc.getName()+" не найдены");
-            throw new IllegalStateException("No implementation for found " + ifc.getName());
+            throw new BeanNotFoundException(MessageSource.getMessage("bean.not.found", ifc.getName()));
         }
         Class<? extends T> clazz = getAClass(ifc, qualifier, classes);
         if (clazz != null) {
@@ -44,11 +46,10 @@ public class JavaConfig {
             log.info("Найдена единственная реализация для " + ifc.getName() + ": " + single.getName());
             return single;
         }
-        log.severe("Найдено множество имплементаций для: "+ifc.getName()+", но ни одна не отмечена @Primary");
-        throw new IllegalStateException(
-                "Multiple implementations found for " + ifc.getName() +
-                        ", but none marked with @Primary. Available: " +
-                        classes.stream().map(Class::getSimpleName).collect(Collectors.joining(", ")));
+        log.severe("Найдено множество имплементаций для: "+ifc.getName()+", но ни одна не отмечена @Primary" +
+                classes.stream().map(Class::getSimpleName)
+                        .collect(Collectors.joining(", ")) );
+        throw new BeanNotFoundException(MessageSource.getMessage("bean.not.found", ifc.getName()));
 
 
     }
