@@ -5,7 +5,7 @@ package dev.zhulidov.summer_framework_course_project.config;
 import dev.zhulidov.summer_framework_course_project.config.annotations.ComponentName;
 import dev.zhulidov.summer_framework_course_project.config.annotations.Primary;
 import dev.zhulidov.summer_framework_course_project.config.scanner.PackageScanner;
-import org.reflections.Reflections;
+
 
 import java.io.IOException;
 import java.util.Set;
