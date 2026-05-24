@@ -23,7 +23,7 @@ public static void run(Class<?> mainComponent)  {
            return context;
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException |
                  IOException | ClassNotFoundException e) {
-            throw new ContextCreationException(MessageSource.getMessage("context.creation.error", e));
+            throw new ContextCreationException(MessageSource.getMessage("context.creation.error", e), e);
         }
 
     }
