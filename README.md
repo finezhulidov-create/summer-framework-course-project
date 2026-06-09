@@ -18,6 +18,7 @@
 - [Разрешение неоднозначностей](#разрешение-неоднозначностей)
 - [Исключения](#исключения)
 - [Архитектура](#архитектура)
+- [Тесты](#тесты)
 - [Подключение через Maven](#подключение-через-maven)
 
 ---
@@ -325,7 +326,15 @@ getObject(Type)
     → ObjectFactory.invokeInit()— вызов @PostConstruct
     → return объект
 ```
+---
+## Тесты
 
+Проект покрыт 9 JUnit 5 тестами.
+
+Запуск тестов:
+```bash
+mvn test
+```
 ---
 ## Подключение через Maven без токена
 [![](https://jitpack.io/v/finezhulidov-create/summer-framework-course-project.svg)](https://jitpack.io/#finezhulidov-create/summer-framework-course-project)
